@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactive dashboard recommending where Intel should build its next data center, based on U.S. regional energy data.">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Building a Data Center: Intel Energy Site Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: control-room dashboard. Navy circuit frame > left nav rail > KPI strip > 3 analysis cards > 3 story cards. Stacks to one column on phones. */
+:root{
+  --frame:#0E1A33; --bg:#F4EFE6; --card:#FBF8F2; --line:#DCD0BC; --ink:#14213D; --muted:#5B6478;
+  --teal:#178C83; --amber:#D58A1E; --coral:#CC4B3E; --slate:#7F8A9E; --bar:#CBC3B5; --bar-neg:#E6CDC6;
+  --chip:#DCEEEA; --hover:#EEE6D8; --hero:#14213D; --hero-fg:#FFFFFF; --grid:#E7E0D3; --shadow:rgba(20,33,61,.12);
+  --f-display:"Poppins",ui-sans-serif,system-ui,sans-serif; --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1A2E; --card:#15233D; --line:#27395B; --ink:#E7EDF6; --muted:#9BA8BE; --teal:#36C2B4; --amber:#F0AA45;
+  --coral:#EE7364; --slate:#9DA7BA; --bar:#33456A; --bar-neg:#4B3846; --chip:#173F45; --hover:#1C2D4C; --hero:#0A1324;
+  --hero-fg:#FFFFFF; --grid:#22324F; --shadow:rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A2E; --card:#15233D; --line:#27395B; --ink:#E7EDF6; --muted:#9BA8BE; --teal:#36C2B4; --amber:#F0AA45;
+  --coral:#EE7364; --slate:#9DA7BA; --bar:#33456A; --bar-neg:#4B3846; --chip:#173F45; --hover:#1C2D4C; --hero:#0A1324;
+  --hero-fg:#FFFFFF; --grid:#22324F; --shadow:rgba(0,0,0,.4); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--frame) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22160%22%3E%3Crect%20width%3D%22160%22%20height%3D%22160%22%20fill%3D%22%230E1A33%22/%3E%3Cpath%20d%3D%22M140%20140v30l10%2010v15%22%20fill%3D%22none%22%20stroke%3D%22%23E39B2D%22%20stroke-opacity%3D%220.85%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%22195%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%23E39B2D%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M50%2030v30l-10%2010v15%22%20fill%3D%22none%22%20stroke%3D%22%231FA39A%22%20stroke-opacity%3D%220.9%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2285%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%231FA39A%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M10%20120v30l10%2010v15%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%22175%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M20%2010v20l10%2010v10%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2250%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M140%20100v30l10%2010v15%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%22155%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M150%200h40l10%2010h20%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22220%22%20cy%3D%2210%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M20%2080h30l10%2010h15%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2275%22%20cy%3D%2290%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M30%20120v20l-10%2010v10%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%22160%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M0%2060v20l10%2010v10%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2210%22%20cy%3D%22100%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M120%20130h20l10%2010h10%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22140%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M20%2090v30l10%2010v15%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%22145%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M30%2040h20l10%2010h10%22%20fill%3D%22none%22%20stroke%3D%22%231FA39A%22%20stroke-opacity%3D%220.9%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2250%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%231FA39A%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M150%2050h40l10%2010h20%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22220%22%20cy%3D%2260%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M40%20130h40l10%20-10h20%22%20fill%3D%22none%22%20stroke%3D%22%231FA39A%22%20stroke-opacity%3D%220.9%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%22120%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%231FA39A%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M60%200h30l10%20-10h15%22%20fill%3D%22none%22%20stroke%3D%22%2333466F%22%20stroke-opacity%3D%221%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22115%22%20cy%3D%22-10%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%2333466F%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M50%20120h40l10%2010h20%22%20fill%3D%22none%22%20stroke%3D%22%231FA39A%22%20stroke-opacity%3D%220.9%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22130%22%20r%3D%222.2%22%20fill%3D%22%230E1A33%22%20stroke%3D%22%231FA39A%22%20stroke-width%3D%221.2%22/%3E%3C/svg%3E") repeat;color:var(--ink);font-family:var(--f-body);font-size:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.app{background:var(--bg);border-radius:6px;display:grid;grid-template-columns:128px minmax(0,1fr);gap:14px;padding:14px;max-width:1500px;margin:0 auto;min-height:calc(100% - 0px);position:relative}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* rail */
+.rail{display:flex;flex-direction:column;align-items:center;gap:6px}
+.brand{text-align:center;display:grid;gap:4px;justify-items:center;margin-bottom:10px}
+.brand svg{width:104px;height:104px}
+.brand b{font-family:var(--f-display);font-size:11.5px;letter-spacing:.06em;line-height:1.25}
+.brand span{font-family:var(--f-display);font-weight:700;color:var(--teal);font-size:12.5px}
+.nav{display:grid;gap:4px;width:100%}
+.nav button{background:none;border:0;border-radius:8px;padding:10px 4px 8px;display:grid;justify-items:center;gap:6px;cursor:pointer;color:var(--muted);position:relative}
+.nav button svg{width:30px;height:30px;--acc:var(--amber)}
+.nav button:hover{background:var(--hover)}
+.nav button[aria-current="page"],.nav button[aria-expanded="true"]{background:var(--chip);color:var(--ink)}
+.nav button[aria-current="page"]::before,.nav button[aria-expanded="true"]::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--teal)}
+.nav button[aria-current="page"] svg,.nav button[aria-expanded="true"] svg{--acc:var(--teal)}
+.nav small{font-size:9.5px;font-weight:700;letter-spacing:.1em}
+.skyline{margin-top:auto;width:110px;color:var(--ink)}
+
+/* main */
+main{display:grid;gap:14px;min-width:0;align-content:start}
+.status{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}
+.status h1{font-family:var(--f-display);font-size:20px;margin:0;letter-spacing:.01em;text-wrap:balance}
+.status h1 em{font-style:normal;color:var(--teal)}
+.datachip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 10px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.pill.demo{background:var(--bar-neg);color:var(--ink)}
+.pill.live{background:var(--chip);color:var(--teal)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px 12px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.card header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.card h2{font-family:var(--f-display);font-size:15px;margin:0;letter-spacing:.02em;text-transform:uppercase;line-height:1.2}
+.card h2 + p,.sub{margin:3px 0 0;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--teal);text-transform:uppercase}
+.card h2::before{content:"";display:inline-block;width:4px;height:15px;border-radius:2px;background:var(--acc,var(--teal));margin-right:8px;vertical-align:-2px}
+.card.amber{--acc:var(--amber)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi .big{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.kpi .row > div:last-child{flex:1 1 120px;min-width:0}
+.chip{display:inline-block;border-radius:99px;background:var(--chip);color:var(--teal);font-weight:800;font-size:10.5px;padding:3px 9px;letter-spacing:.04em}
+.chip.bad{background:var(--bar-neg);color:var(--coral)}
+.kpi .kn{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;margin-top:4px}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--grid);margin-top:8px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--teal);transition:width .5s}
+.meter b{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);transition:left .5s}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.05em}
+.checks li{display:flex;gap:7px;align-items:center}
+.checks li::before{content:"✓";display:grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--teal);color:var(--card);font-size:10px}
+.checks li.no::before{content:"✕";background:var(--coral)}
+.checks li.no{color:var(--muted)}
+
+.row1{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.row2{display:grid;grid-template-columns:1.7fr 1.45fr 1fr;gap:14px}
+.deep{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+svg text{fill:var(--muted);font-family:var(--f-body);font-size:10px}
+
+.seg{display:inline-flex;background:var(--grid);border-radius:99px;padding:2px;gap:2px}
+.seg button{border:0;background:none;border-radius:99px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;color:var(--muted);text-transform:uppercase}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend button{border:1px solid var(--line);background:none;border-radius:99px;padding:3px 9px 3px 7px;font-size:10px;font-weight:700;letter-spacing:.06em;cursor:pointer;display:inline-flex;gap:6px;align-items:center;text-transform:uppercase;color:var(--ink)}
+.legend button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.legend button[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+.legend button[aria-pressed="false"] i{background:none;border:2px solid var(--c)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select.sel{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:4px 10px;font-size:11px;font-weight:600}
+
+.mark{cursor:pointer}
+.hex polygon{transition:fill .4s,stroke-width .2s}
+.hex:hover polygon{stroke:var(--ink);stroke-width:2}
+.hex text{pointer-events:none;text-anchor:middle}
+.picked{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--hero);color:var(--hero-fg);border-radius:99px;padding:8px 8px 8px 18px}
+.picked small{color:var(--teal);font-weight:700;letter-spacing:.12em;font-size:9.5px}
+.picked b{font-family:var(--f-display);font-size:14px;flex:1}
+.picked button{background:rgba(255,255,255,.12);color:var(--hero-fg);border:0;border-radius:99px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:.1em;cursor:pointer}
+
+.mix{display:grid;gap:8px}
+.mixrow{display:grid;grid-template-columns:34px 22px minmax(70px,1fr) minmax(60px,1.5fr);align-items:center;gap:10px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:default}
+.mixrow svg.ico{width:20px;height:20px}
+.mixrow .b{height:12px;border-radius:3px;background:var(--c);transition:width .5s}
+.mixfoot{display:flex;justify-content:space-between;font-size:10px;font-weight:800;letter-spacing:.08em;margin-top:auto}
+
+.verdict{background:var(--hero);color:var(--hero-fg);border-radius:8px;padding:12px 14px}
+.verdict small{color:var(--teal);font-weight:700;letter-spacing:.12em;font-size:9.5px}
+.verdict b{display:block;font-family:var(--f-display);font-size:22px;line-height:1.1;margin-top:2px}
+.facts{display:grid;gap:8px}
+.facts div strong{display:block;font-family:var(--f-display);color:var(--teal);font-size:16px}
+.facts div span{font-size:11.5px;color:var(--muted)}
+
+/* drawers */
+.drawer{position:absolute;top:14px;left:156px;bottom:14px;width:min(480px,calc(100% - 170px));background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 50px var(--shadow);z-index:20;display:flex;flex-direction:column;overflow:hidden}
+.drawer > header{background:var(--hero);color:var(--hero-fg);padding:18px 22px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.drawer > header h2{font-family:var(--f-display);font-size:20px;margin:0}
+.drawer > header p{margin:4px 0 0;color:var(--teal);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.drawer > header button{background:none;border:0;color:var(--hero-fg);font-weight:700;font-size:11px;letter-spacing:.1em;cursor:pointer}
+.drawer .body{padding:18px 22px;overflow:auto;display:grid;gap:16px;align-content:start}
+.scrim{position:absolute;inset:0;background:var(--frame);opacity:.35;z-index:19;border-radius:6px}
+.note{display:grid;grid-template-columns:26px 1fr;gap:10px}
+.note > span{width:24px;height:24px;border-radius:50%;background:var(--teal);color:var(--card);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:12px}
+.note h3{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.note p{margin:3px 0 0;color:var(--muted);line-height:1.5;font-size:13px}
+.rec{background:var(--chip);border-radius:8px;padding:14px 16px}
+.rec small{color:var(--teal);font-weight:800;letter-spacing:.1em;font-size:10px}
+.rec b{display:block;font-family:var(--f-display);font-size:18px;margin:4px 0}
+.rec p{margin:0;font-size:13px;line-height:1.5}
+.field{display:grid;gap:6px}
+.field label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:8px}
+.drawer .body p{line-height:1.55;margin:0;font-size:13px}
+.foot{margin:0;font-size:11px;color:var(--muted);line-height:1.4}
+.foot:empty{display:none}
+.drawer .body ul{margin:0;padding-left:18px;line-height:1.6;font-size:13px}
+.drawer a{color:var(--teal)}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;display:grid;gap:8px;justify-items:center}
+.drop.over{border-color:var(--teal);background:var(--chip)}
+.progress{font-size:12px;color:var(--muted)}
+
+.tip{position:fixed;pointer-events:none;background:var(--hero);color:var(--hero-fg);border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.45;max-width:240px;z-index:50;box-shadow:0 8px 24px var(--shadow);opacity:0;transition:opacity .12s}
+.tip b{font-family:var(--f-display)}
+.tip em{font-style:normal;color:#7FE0D5}
+
+@media (max-width:1180px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row1{grid-template-columns:repeat(2,minmax(0,1fr))} .row1 > :last-child{grid-column:1/-1}
+  .row2{grid-template-columns:repeat(2,minmax(0,1fr))} .row2 > :last-child{grid-column:1/-1}
+}
+@media (max-width:760px){
+  body{padding-block:8px}
+  .app{grid-template-columns:minmax(0,1fr);padding:10px}
+  .rail{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  .brand{flex-direction:row;display:flex;align-items:center;margin:0;gap:10px}
+  .brand svg{width:56px;height:56px}
+  .nav{grid-template-columns:repeat(5,1fr)}
+  .nav button svg{width:22px;height:22px}
+  .skyline{display:none}
+  .kpis,.row1,.row2,.deep{grid-template-columns:minmax(0,1fr)}
+  .row1 > :last-child,.row2 > :last-child{grid-column:auto}
+  .drawer{left:8px;right:8px;width:auto;top:8px;bottom:8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <symbol id="i-overview" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><path d="M17.5 12.5l-2 3.5h3l-2 3.5" stroke="var(--acc)"/></symbol>
+  <symbol id="i-deep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V13M8 20V9M12 20v-5"/><circle cx="16" cy="9" r="4.5" stroke="var(--acc)"/><path d="M19.3 12.3L22 15" stroke="var(--acc)"/><path d="M3 21h11"/></symbol>
+  <symbol id="i-notes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0012 3z"/><path d="M12 7v3l1.5 1.5" stroke="var(--acc)"/></symbol>
+  <symbol id="i-filters" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/><path d="M14 7.5h4" stroke="var(--acc)"/></symbol>
+  <symbol id="i-about" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" stroke="var(--acc)"/></symbol>
+  <symbol id="s-hydro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s-6 6.8-6 11a6 6 0 0012 0c0-4.2-6-11-6-11z"/><path d="M8.5 14.5c1.2 1 2.3 1 3.5 0s2.3-1 3.5 0" stroke="var(--acc)"/></symbol>
+  <symbol id="s-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v10M9.5 21h5"/><circle cx="12" cy="9" r="1.6" stroke="var(--acc)"/><path d="M12 7.4L12.8 2.5M13.4 9.8l4.4 2.2M10.6 9.8l-4.4 2.2" stroke="var(--acc)"/></symbol>
+  <symbol id="s-solar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3" stroke="var(--acc)"/><path d="M12 1.5v1.3M6.5 7H5.2M18.8 7h-1.3" stroke="var(--acc)"/><path d="M4 21l2.5-8h11L20 21z"/><path d="M8.6 13l-1.2 8M15.4 13l1.2 8M5.2 17h13.6"/></symbol>
+  <symbol id="s-gas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-3.9 0-6.5-2.6-6.5-6 0-4.2 4-6.2 4.5-11 3 2 4 4.2 3.6 7 1.1-.6 1.8-1.7 2-3 1.7 1.8 2.9 4.2 2.9 7 0 3.4-2.6 6-6.5 6z"/><path d="M12 21c-1.7 0-2.8-1.1-2.8-2.6 0-1.8 1.7-2.7 2.3-4.4 1.6 1.2 3.3 2.5 3.3 4.4 0 1.5-1.1 2.6-2.8 2.6z" stroke="var(--acc)"/></symbol>
+  <symbol id="s-coal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l3.5-5 4 1.5 3-4.5 4.5 2 3 6z"/><path d="M3 17h18v3H3z"/><path d="M10.5 13.5l1.5 3.5" stroke="var(--acc)"/></symbol>
+  <symbol id="s-nuclear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6" stroke="var(--acc)"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/></symbol>
+  <symbol id="s-petroleum" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V6l5-3v18M10 9h5l4 4v8"/><path d="M15 15.5c0 1.2.8 2 1.8 2s1.8-.8 1.8-2-1.8-3-1.8-3-1.8 1.8-1.8 3z" stroke="var(--acc)"/></symbol>
+  <symbol id="s-other" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 01-11 0z"/><path d="M12 17v4" stroke="var(--acc)"/></symbol>
+ </defs>
+</svg>
+
+<div class="app" id="app">
+ <aside class="rail">
+  <div class="brand">
+   <svg viewBox="0 0 120 120" role="img" aria-label="PowerGrid Site Scout badge">
+    <circle cx="60" cy="60" r="58" fill="#14213D"/><circle cx="60" cy="60" r="53" fill="none" stroke="#1FA39A" stroke-width="1.5"/><circle cx="60" cy="60" r="40" fill="#1B2C52"/>
+    <defs><path id="arcT" d="M13,60 a47,47 0 0,1 94,0"/><path id="arcB" d="M8,60 a52,52 0 0,0 104,0"/></defs>
+    <text font-family="Poppins" font-weight="700" font-size="10" fill="#fff" letter-spacing="2.4"><textPath href="#arcT" startOffset="50%" text-anchor="middle">POWERGRID</textPath></text>
+    <text font-family="Poppins" font-weight="700" font-size="8" fill="#1FA39A" letter-spacing="2"><textPath href="#arcB" startOffset="50%" text-anchor="middle">SITE SCOUT</textPath></text>
+    <g fill="none" stroke="#fff" stroke-width="1.5"><rect x="46" y="42" width="28" height="10" rx="1.5"/><rect x="46" y="55" width="28" height="10" rx="1.5"/><rect x="46" y="68" width="28" height="10" rx="1.5"/></g>
+    <circle cx="51" cy="47" r="1.4" fill="#1FA39A"/><circle cx="51" cy="60" r="1.4" fill="#E39B2D"/><circle cx="51" cy="73" r="1.4" fill="#1FA39A"/>
+    <path d="M71 34 l-8 13 h7 l-6 12 l13 -16 h-7 l6 -9z" fill="#E39B2D" stroke="#14213D"/>
+   </svg>
+   <div><b>INTEL DATA<br>CENTER SEARCH</b><br><span>2022 GRID DATA</span></div>
+  </div>
+  <nav class="nav" aria-label="Dashboard">
+   <button id="nav-overview" data-view="overview" aria-current="page"><svg><use href="#i-overview"/></svg><small>OVERVIEW</small></button>
+   <button id="nav-deep" data-view="deep-dive"><svg><use href="#i-deep"/></svg><small>DEEP DIVE</small></button>
+   <button id="nav-notes" data-drawer="notes" aria-expanded="false"><svg><use href="#i-notes"/></svg><small>MY NOTES</small></button>
+   <button id="nav-filters" data-drawer="filters" aria-expanded="false"><svg><use href="#i-filters"/></svg><small>FILTERS</small></button>
+   <button id="nav-about" data-drawer="about" aria-expanded="false"><svg><use href="#i-about"/></svg><small>DATA</small></button>
+  </nav>
+  <svg class="skyline" viewBox="0 0 150 80" aria-hidden="true">
+   <g fill="currentColor"><path d="M0 80h150v-6H0z"/><rect x="60" y="36" width="78" height="38"/><rect x="70" y="24" width="22" height="12"/></g>
+   <g fill="#1FA39A"><rect x="67" y="44" width="11" height="4"/><rect x="84" y="44" width="11" height="4"/><rect x="101" y="44" width="11" height="4"/><rect x="118" y="44" width="11" height="4"/><rect x="84" y="54" width="11" height="4"/><rect x="118" y="54" width="11" height="4"/></g>
+   <g fill="#E39B2D"><rect x="67" y="54" width="11" height="4"/><rect x="101" y="54" width="11" height="4"/></g>
+   <g fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 74L25 6h6l13 68"/><path d="M15 60h26M18 44h20M21 28h14M15 60l23-16M41 60L18 44M18 44l17-16M38 44L21 28M8 18h40M14 10h28"/></g>
+   <path d="M48 18Q78 34 70 24" fill="none" stroke="#E39B2D" stroke-width="1.2"/>
+  </svg>
+ </aside>
+
+ <main id="main">
+  <div class="status">
+   <h1>Where should Intel build its next <em>data center</em>?</h1>
+   <div class="datachip"><span id="dataPill" class="pill demo">Demo data</span><span id="dataNote">Net production and renewable % read off my Tableau charts. Other values are samples.</span><button class="btn primary" id="loadBtn">Load energy_dataset.csv</button></div>
+  </div>
+
+  <section id="view-overview" aria-label="Overview" style="display:grid;gap:14px">
+   <div class="kpis">
+    <article class="card kpi"><header><div><h2>Net production</h2><p>MWh made minus MWh used</p></div></header>
+     <div class="row"><div class="big" id="kNet">0</div><div><span class="chip" id="kNetRank"></span><div class="kn" id="kNetAvg"></div></div></div>
+     <svg class="chart" id="kNetSpark" viewBox="0 0 260 34" aria-hidden="true"></svg></article>
+    <article class="card kpi"><header><div><h2>Renewable share</h2><p>Wind + solar + hydro</p></div></header>
+     <div class="row"><div class="big" id="kRen">0</div><div><span class="chip" id="kRenRank"></span><div class="kn" id="kRenAvg"></div></div></div>
+     <div class="meter" aria-hidden="true"><i id="kRenBar"></i><b id="kRenMark"></b></div></article>
+    <article class="card kpi amber"><header><div><h2>Top power source</h2><p>Largest share of generation</p></div></header>
+     <div class="row"><svg id="kTopIco" style="width:44px;height:44px;padding:8px;border-radius:50%;background:var(--chip)"><use href="#s-hydro"/></svg><div><div class="big" id="kTop" style="font-size:22px">-</div><div class="kn" id="kTopNote"></div></div></div></article>
+    <article class="card kpi"><header><div><h2>Site fit score</h2><p>Intel's 3 must-haves</p></div></header>
+     <div class="row"><div class="big" id="kFit">0/3</div><ul class="checks" id="kChecks"></ul></div></article>
+   </div>
+
+   <div class="row1">
+    <article class="card"><header><div><h2>Who has power to spare?</h2><p id="rankSub">Net production by region, million MWh</p></div>
+      <div class="seg" role="group" aria-label="Rank by"><button id="rk-net" aria-pressed="true" data-rank="net">Surplus</button><button id="rk-ren" aria-pressed="false" data-rank="ren">Renewable</button></div></header>
+     <svg class="chart" id="rank" viewBox="0 0 380 300" role="img" aria-label="Regions ranked"></svg></article>
+    <article class="card amber"><header><div><h2>Where are we looking?</h2><p>Click any region, every card follows</p></div>
+      <div class="seg" role="group" aria-label="Color map by"><button id="mp-net" aria-pressed="true" data-map="net">Surplus</button><button id="mp-ren" aria-pressed="false" data-map="ren">Renewable</button></div></header>
+     <svg class="chart" id="hexmap" viewBox="0 0 400 236" role="group" aria-label="Region map"></svg>
+     <div class="picked"><small>SELECTED</small><b id="pickedName">Northwest (NW)</b><button id="resetBtn">↺ RESET TO NW</button></div></article>
+    <article class="card"><header><div><h2>What keeps the lights on?</h2><p>Share of generation by source</p></div>
+      <div class="seg" role="group" aria-label="Sort sources"><button id="mx-share" aria-pressed="true" data-mix="share">By share</button><button id="mx-type" aria-pressed="false" data-mix="type">By type</button></div></header>
+     <div class="mix" id="mix"></div>
+     <div class="mixfoot"><span style="color:var(--teal)" id="mixRen"></span><span style="color:var(--amber)" id="mixFos"></span></div></article>
+   </div>
+
+   <div class="row2">
+    <article class="card amber"><header><div><h2>Does supply keep up?</h2><p>Net generation vs demand over time</p></div>
+      <div class="seg" role="group" aria-label="Period"><button id="pd-day" aria-pressed="false" data-period="day">Day</button><button id="pd-week" aria-pressed="false" data-period="week">Week</button><button id="pd-month" aria-pressed="true" data-period="month">Month</button></div></header>
+     <div class="legend" id="sdLegend"></div>
+     <svg class="chart" id="sd" viewBox="0 0 470 210" role="img" aria-label="Supply and demand over time"></svg><p class="foot" id="sdFoot"></p></article>
+    <article class="card"><header><div><h2>Does it run at night?</h2><p>Renewable output by hour of day</p></div>
+      <label class="tools"><span class="sub" style="margin:0">VS</span><select class="sel" id="cmpSel" aria-label="Compare with region"></select></label></header>
+     <div class="legend" id="puLegend"></div>
+     <svg class="chart" id="pulse" viewBox="0 0 400 210" role="img" aria-label="Renewable output by hour"></svg></article>
+    <article class="card amber"><header><div><h2>So, where to build?</h2><p>The call for Intel</p></div></header>
+     <div class="verdict"><small id="vLead">BUILD IN THE</small><b id="vName">NORTHWEST</b></div>
+     <div class="facts" id="vFacts"></div></article>
+   </div>
+  </section>
+
+  <section id="view-deep-dive" aria-label="Deep dive" hidden style="display:grid;gap:14px">
+   <div class="deep">
+    <article class="card"><header><div><h2>What is the grid made of?</h2><p id="tmSub">Utility power source breakdown</p></div></header>
+     <svg class="chart" id="treemap" viewBox="0 0 560 300" role="img" aria-label="Treemap of power sources"></svg></article>
+    <article class="card amber"><header><div><h2>Energy source by region</h2><p id="esSub">Energy generated by source over time</p></div>
+      <div class="tools"><select class="sel" id="esRegion" aria-label="Region"></select>
+      <div class="seg" role="group" aria-label="Period"><button id="es-day" aria-pressed="false" data-esperiod="day">Day</button><button id="es-week" aria-pressed="false" data-esperiod="week">Week</button><button id="es-month" aria-pressed="true" data-esperiod="month">Month</button></div></div></header>
+     <div class="legend" id="msLegend"></div>
+     <svg class="chart" id="monthly" viewBox="0 0 560 270" role="img" aria-label="Energy generated by source over time"></svg><p class="foot" id="esFoot"></p></article>
+    <article class="card amber"><header><div><h2>When does each source ramp up?</h2><p>% change from the previous hour</p></div>
+      <select class="sel" id="srcSel" aria-label="Energy source"></select></header>
+     <svg class="chart" id="hourdiff" viewBox="0 0 560 270" role="img" aria-label="Hourly percent difference"></svg></article>
+    <article class="card"><header><div><h2>Steady or spiky?</h2><p id="ssSub">Renewables by hour as % of each region's peak</p></div></header>
+     <div class="legend" id="ssLegend"></div>
+     <svg class="chart" id="steady" viewBox="0 0 560 270" role="img" aria-label="Normalized renewable output"></svg></article>
+   </div>
+  </section>
+ </main>
+
+ <div class="scrim" id="scrim" hidden></div>
+
+ <aside class="drawer" id="drawer-notes" hidden aria-label="My notes">
+  <header><div><h2>My notes</h2><p>What the data told me, one question at a time</p></div><button data-close>✕ CLOSE</button></header>
+  <div class="body">
+   <div class="note"><span>1</span><div><h3>Who makes more than they use?</h3><p>Five regions are net producers. Mid-Atlantic leads at about 31M MWh and the Northwest is second at about 22M.</p></div></div>
+   <div class="note"><span>2</span><div><h3>When is Mid-Atlantic's surplus biggest?</h3><p>July 2022, when generation pulls furthest above demand.</p></div></div>
+   <div class="note"><span>3</span><div><h3>Who runs greenest?</h3><p>Northwest, Central and California. Big river systems, a wind corridor and year-round sunshine give them a head start.</p></div></div>
+   <div class="note"><span>4</span><div><h3>Who does both?</h3><p>Only the Northwest and Central are net producers that also rank top 5 for renewables.</p></div></div>
+   <div class="note"><span>5</span><div><h3>When does California's wind pick up?</h3><p>Hours 10 to 22, peaking near 3 PM at about +9.5% per hour. Early mornings are when it slows down.</p></div></div>
+   <div class="note"><span style="background:var(--amber)">6</span><div><h3>NW vs CAL, side by side</h3><p>California's renewables spike at midday and drop off at night. The Northwest's line stays almost flat.</p></div></div>
+   <div class="rec"><small>MY RECOMMENDATION</small><b>Build in the Northwest.</b><p>A big energy surplus, the highest renewable share in the country, and hydropower that keeps running after the sun goes down.</p></div>
+  </div>
+ </aside>
+
+ <aside class="drawer" id="drawer-filters" hidden aria-label="Filters">
+  <header><div><h2>Filters</h2><p>Same controls as the cards, in one place</p></div><button data-close>✕ CLOSE</button></header>
+  <div class="body">
+   <div class="field"><label for="fRegion">Region</label><select id="fRegion"></select></div>
+   <div class="field"><label for="fCompare">Compare against</label><select id="fCompare"></select></div>
+   <div class="field"><label for="fPeriod">Supply vs demand period</label><select id="fPeriod"><option value="day">Day</option><option value="week">Week</option><option value="month">Month</option></select></div>
+   <div class="field"><label for="fSource">Hourly difference source</label><select id="fSource"></select></div>
+  </div>
+ </aside>
+
+ <aside class="drawer" id="drawer-about" hidden aria-label="Data and method">
+  <header><div><h2>Data & method</h2><p>What's behind every number</p></div><button data-close>✕ CLOSE</button></header>
+  <div class="body">
+   <div class="drop" id="drop"><b>Use my real data</b><p>Drop <code>energy_dataset.csv</code> here or choose it. It stays in your browser.</p><input type="file" id="fileIn" accept=".csv,text/csv"><div class="progress" id="prog"></div><button class="btn" id="demoBtn" hidden>Back to demo data</button></div>
+   <p><b>Demo mode.</b> Net production and renewable % for all 13 regions were read off my Tableau charts, so they're close but rounded. The power mix, monthly trends and hourly curves are sample values shaped to look realistic. Load the CSV and every chart switches to the real numbers.</p>
+   <p><b>Calculations.</b> Net production = SUM(Net Generation) minus SUM(Demand). Renewable % = (Wind + Solar + Hydropower and Pumped Storage) / Net Generation. Steady ratio = a region's lowest hour of renewable output divided by its highest. Site fit = net producer + top 5 renewable + steady ratio of 0.75 or more.</p>
+   <p><b>Design inspiration</b> from Tableau Viz of the Day work: question-style titles and one accent color (Mila Kholodiy), collapsible panels and a side nav (Pradeep Kumar G), light-bordered cards on a pale canvas (Frankie Benson).</p>
+  </div>
+ </aside>
+ <div class="tip" id="tip" role="tooltip"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(() => {
+"use strict";
+/* ---------- reference data ---------- */
+const REG = [
+ // code, name, hex col,row, net (M MWh), renewable %, demand placeholder (M MWh)
+ ["NW","Northwest",0,0,22,52,360],["CENT","Central",2,0,11,41,290],["MIDW","Midwest",3,0,-15,17,650],
+ ["NY","New York",5,0,-28,24.5,150],["NE","New England",6,0,-16,12,120],["CAL","California",0,1,-64,37.5,260],
+ ["SW","Southwest",1,1,15,15.5,110],["TEN","Tennessee",3,1,-4.5,12,200],["MIDA","Mid-Atlantic",4,1,31,6.5,780],
+ ["TEX","Texas",2,2,-1,30.5,430],["SE","Southeast",3,2,6,7.5,230],["CAR","Carolinas",4,2,-3,.3,220],["FLA","Florida",4,3,-9,.5,250]];
+const NAME = Object.fromEntries(REG.map(r => [r[0], r[1]]));
+const SRC = [
+ {k:"hydro",label:"Hydro",group:"ren",col:"Hydropower and Pumped Storage"},{k:"wind",label:"Wind",group:"ren",col:"Wind"},
+ {k:"solar",label:"Solar",group:"ren",col:"Solar"},{k:"gas",label:"Natural gas",group:"fos",col:"Natural Gas"},
+ {k:"coal",label:"Coal",group:"fos",col:"Coal"},{k:"petroleum",label:"Petroleum",group:"fos",col:"All Petroleum Products"},
+ {k:"nuclear",label:"Nuclear",group:"nuc",col:"Nuclear"},{k:"other",label:"Other",group:"nuc",col:"Other Fuel Sources"}];
+const SK = SRC.map(s => s.k), SBY = Object.fromEntries(SRC.map(s => [s.k, s]));
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/* ---------- demo model (sample values, clearly labeled in the UI) ---------- */
+function demoModel(){
+  const renSplit = {NW:[.85,.12,.03],CENT:[.05,.9,.05],CAL:[.25,.2,.55],TEX:[.02,.78,.2],NY:[.8,.17,.03],MIDW:[.1,.8,.1],SW:[.25,.2,.55],
+    TEN:[.9,.03,.07],NE:[.45,.3,.25],SE:[.5,0,.5],MIDA:[.3,.45,.25],FLA:[.1,0,.9],CAR:[.3,0,.7]};
+  const nuc = {NW:.1,CENT:.1,CAL:.2,TEX:.12,NY:.4,MIDW:.25,SW:.2,TEN:.4,NE:.3,SE:.25,MIDA:.4,FLA:.12,CAR:.45};
+  const coal = {NW:.3,CENT:.45,CAL:.02,TEX:.25,NY:.01,MIDW:.45,SW:.3,TEN:.4,NE:.02,SE:.3,MIDA:.2,FLA:.08,CAR:.2};
+  const rnd = d3.randomLcg(42);
+  const hourShape = {
+    hydro:h => 1 + .08*Math.sin(2*Math.PI*(h-11)/24), wind:h => 1 + .25*Math.cos(2*Math.PI*(h-3)/24),
+    solar:h => (h>=6&&h<=19) ? Math.pow(Math.max(0,Math.sin(Math.PI*(h-6)/13)),1.3)+.004 : .004,
+    gas:h => 1 + .3*Math.sin(2*Math.PI*(h-11)/24), coal:h => 1 + .08*Math.sin(2*Math.PI*(h-11)/24),
+    petroleum:h => 1 + .3*Math.sin(2*Math.PI*(h-11)/24), nuclear:() => 1, other:() => 1};
+  const monShape = {
+    hydro:m => 1 + .35*Math.cos(2*Math.PI*(m-5)/12), wind:m => 1 + .25*Math.cos(2*Math.PI*(m-3)/12),
+    solar:m => 1 + .4*Math.cos(2*Math.PI*(m-5.5)/12), gas:m => 1 + .25*Math.cos(2*Math.PI*(m-7)/12) + .08*Math.cos(4*Math.PI*m/12),
+    coal:m => 1 + .15*Math.cos(4*Math.PI*(m-0.5)/12), petroleum:m => 1 + .3*Math.cos(2*Math.PI*m/12),
+    nuclear:m => 1 - .08*Math.exp(-Math.pow(m-3.5,2)) - .08*Math.exp(-Math.pow(m-9.5,2)), other:() => 1};
+  const out = {};
+  REG.forEach(([code,,,,net,ren,dem]) => {
+    const D = dem*1e6, N = net*1e6, G = D + N;
+    const mix = {}; const R = G*ren/100, F = G - R; const sp = renSplit[code];
+    mix.hydro = R*sp[0]; mix.wind = R*sp[1]; mix.solar = R*sp[2];
+    mix.nuclear = F*nuc[code]; const rest = F - mix.nuclear;
+    mix.coal = rest*coal[code]; mix.petroleum = rest*.01; mix.other = rest*.02; mix.gas = rest - mix.coal - mix.petroleum - mix.other;
+    // monthly by source (sum = mix)
+    const monthlySrc = {}; SK.forEach(k => { const w = d3.range(12).map(m => Math.max(.05, monShape[k](m))); const s = d3.sum(w); monthlySrc[k] = w.map(x => mix[k]*x/s); });
+    const demW = d3.range(12).map(m => 1 + .12*Math.cos(2*Math.PI*(m-7)/12) + .05*Math.cos(4*Math.PI*m/12)); const dS = d3.sum(demW);
+    const genM = d3.range(12).map(m => d3.sum(SK, k => monthlySrc[k][m]));
+    const monthly = d3.range(12).map(m => ({date:new Date(2022,m,1), gen:genM[m], dem:D*demW[m]/dS}));
+    // daily
+    const daily = [];
+    for (let d = new Date(2022,0,1); d.getFullYear() === 2022; d = d3.timeDay.offset(d,1)) {
+      const m = d.getMonth(), dim = new Date(2022,m+1,0).getDate(), dow = d.getDay(), we = (dow===0||dow===6) ? .93 : 1.02;
+      const nz = 1 + (rnd()-.5)*.08;
+      const src = Object.fromEntries(SK.map(k => [k, monthlySrc[k][m]/dim*(1+(rnd()-.5)*.1)]));
+      daily.push({date:d, gen:d3.sum(SK, k => src[k]), dem:monthly[m].dem/dim*we*nz, n:24, src});
+    }
+    // hourly by source (sum across the year at each hour of day)
+    const hourly = {}; SK.forEach(k => { const w = d3.range(24).map(h => hourShape[k](h)); const s = d3.sum(w); hourly[k] = w.map(x => mix[k]*x/s); });
+    out[code] = {gen:G, dem:D, mix, monthly, daily, hourly, monthlySrc, months:monthly.map(d => d.date)};
+  });
+  return {regions:out, source:"demo"};
+}
+
+/* ---------- CSV ingestion ---------- */
+const NAME2CODE = Object.fromEntries(REG.map(r => [r[1].toLowerCase(), r[0]]));
+function findCol(fields, ...keys){ const lf = fields.map(f => f.toLowerCase()); for (const k of keys){ const i = lf.findIndex(f => f.includes(k)); if (i>=0) return fields[i]; } return null; }
+function num(v){ if (v==null || v==="") return 0; const n = +String(v).replace(/,/g,""); return isFinite(n) ? n : 0; }
+function parseWhen(s, dateS, hourN){
+  if (dateS && hourN != null && hourN !== ""){ const d = new Date(dateS); if (!isNaN(d)) return {y:d.getFullYear(), m:d.getMonth(), d:d.getDate(), h:(+hourN)%24}; }
+  if (!s) return null; s = String(s).trim();
+  let r = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([ap])?\.?\s*m?\.?/i);
+  if (r){ let h = +r[4]; if (r[6]){ const pm = r[6].toLowerCase()==="p"; if (h===12) h = pm?12:0; else if (pm) h += 12; } return {y:+r[3], m:+r[1]-1, d:+r[2], h:h%24}; }
+  r = s.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2})/); if (r) return {y:+r[1], m:+r[2]-1, d:+r[3], h:+r[4]};
+  const d = new Date(s); if (!isNaN(d)) return {y:d.getFullYear(), m:d.getMonth(), d:d.getDate(), h:d.getHours()};
+  return null;
+}
+function loadCSV(file){
+  const prog = $("#prog"); prog.textContent = "Reading " + file.name + "…";
+  const acc = {}; let rows = 0, cols = null, bad = 0;
+  Papa.parse(file, {header:true, skipEmptyLines:true,
+    chunk(res){
+      if (!cols){ const f = res.meta.fields;
+        cols = {ba:findCol(f,"balancing"), region:findCol(f,"region"), time:findCol(f,"local time","end of hour","utc time","time"), date:findCol(f,"data date"), hour:findCol(f,"hour number"),
+          dem:findCol(f,"demand"), gen:findCol(f,"net generation")};
+        SRC.forEach(s => cols[s.k] = findCol(f, s.col.toLowerCase(), s.k === "hydro" ? "hydro" : s.k === "petroleum" ? "petroleum" : s.k === "other" ? "other" : s.k));
+        if (!cols.region || !cols.dem || !cols.gen){ prog.textContent = "This file needs Region, Demand and Net Generation columns. Check it's energy_dataset.csv."; return this && this.abort && this.abort(); }
+      }
+      for (const row of res.data){
+        rows++;
+        let rc = String(row[cols.region]||"").trim(); const up = rc.toUpperCase(); rc = NAME[up] ? up : NAME2CODE[rc.toLowerCase()];
+        const w = parseWhen(row[cols.time], cols.date && row[cols.date], cols.hour && row[cols.hour]);
+        if (!rc || !w){ bad++; continue; }
+        const a = acc[rc] || (acc[rc] = {gen:0, dem:0, mix:Object.fromEntries(SK.map(k => [k,0])), mon:new Map(), day:new Map(), hourly:Object.fromEntries(SK.map(k => [k,new Array(24).fill(0)])), monSrc:new Map(), ba:new Map()});
+        const g = num(row[cols.gen]), dm = num(row[cols.dem]);
+        a.gen += g; a.dem += dm;
+        const mk = w.y*12 + w.m, dk = `${w.y}-${w.m}-${w.d}`;
+        const mo = a.mon.get(mk) || {date:new Date(w.y,w.m,1), gen:0, dem:0}; mo.gen += g; mo.dem += dm; a.mon.set(mk, mo);
+        const dy = a.day.get(dk) || {date:new Date(w.y,w.m,w.d), gen:0, dem:0, n:0, src:Object.fromEntries(SK.map(k => [k,0]))}; dy.gen += g; dy.dem += dm; dy.n++; a.day.set(dk, dy);
+        const baName = cols.ba ? String(row[cols.ba]||"").trim() || "Unknown" : null;
+        let bm = baName ? a.ba.get(baName) : null; if (baName && !bm){ bm = Object.fromEntries(SK.map(k => [k,0])); a.ba.set(baName, bm); }
+        let ms = a.monSrc.get(mk); if (!ms){ ms = Object.fromEntries(SK.map(k => [k,0])); a.monSrc.set(mk, ms); }
+        SK.forEach(k => { if (!cols[k]) return; const v = num(row[cols[k]]); a.mix[k] += v; a.hourly[k][w.h] += v; ms[k] += v; dy.src[k] += v; if (bm) bm[k] += v; });
+      }
+      prog.textContent = `Read ${d3.format(",")(rows)} rows…`;
+    },
+    complete(){
+      if (!cols || !cols.region) return;
+      const regions = {};
+      for (const [code, a] of Object.entries(acc)){
+        const mkeys = [...a.mon.keys()].sort((x,y) => x-y);
+        regions[code] = {gen:a.gen, dem:a.dem, mix:a.mix, hourly:a.hourly, baMix:a.ba.size ? Object.fromEntries(a.ba) : null,
+          monthly:mkeys.map(k => a.mon.get(k)), daily:[...a.day.values()].sort((x,y) => x.date-y.date),
+          months:mkeys.map(k => a.mon.get(k).date), monthlySrc:Object.fromEntries(SK.map(k => [k, mkeys.map(m => a.monSrc.get(m)[k])]))};
+      }
+      if (!Object.keys(regions).length){ prog.textContent = "No rows matched the 13 region codes. Check the Region column."; return; }
+      model = {regions, source:"csv", file:file.name, rows};
+      if (!model.regions[state.region]) state.region = Object.keys(regions)[0];
+      prog.textContent = `Loaded ${d3.format(",")(rows)} rows from ${Object.keys(regions).length} regions` + (bad ? ` (${d3.format(",")(bad)} skipped)` : "") + ".";
+      $("#demoBtn").hidden = false; setupSelects(); render();
+    },
+    error(e){ prog.textContent = "Couldn't read that file: " + e.message; }
+  });
+}
+
+/* ---------- state ---------- */
+let model = demoModel();
+const state = {view:"overview", region:"NW", compare:"CAL", rank:"net", map:"net", mixSort:"share", period:"month",
+  sd:{gen:true, dem:true}, esPeriod:"month", pu:{sel:true, cmp:true}, ms:{}, ddSource:"wind", ss:{sel:true, cmp:true}};
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmtM = v => (v/1e6 >= 0 ? "+" : "") + d3.format(".1f")(v/1e6) + "M";
+const fmtS = v => d3.format(".3~s")(v).replace("G","B");
+const pct = v => d3.format(".1f")(v) + "%";
+const anim = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450;
+
+/* ---------- derived metrics ---------- */
+function metrics(){
+  const codes = Object.keys(model.regions);
+  const m = {};
+  codes.forEach(c => { const r = model.regions[c]; const ren = r.mix.hydro + r.mix.wind + r.mix.solar;
+    const hr = d3.range(24).map(h => r.hourly.hydro[h] + r.hourly.wind[h] + r.hourly.solar[h]);
+    const top = SK.slice().sort((a,b) => r.mix[b]-r.mix[a])[0];
+    m[c] = {code:c, net:r.gen - r.dem, ren:r.gen ? ren/r.gen*100 : 0, steady:d3.max(hr) ? d3.min(hr)/d3.max(hr) : 0, hr, top, topShare:r.gen ? r.mix[top]/r.gen*100 : 0}; });
+  const byNet = codes.slice().sort((a,b) => m[b].net - m[a].net), byRen = codes.slice().sort((a,b) => m[b].ren - m[a].ren);
+  codes.forEach(c => { m[c].netRank = byNet.indexOf(c)+1; m[c].renRank = byRen.indexOf(c)+1;
+    m[c].checks = [m[c].net > 0, m[c].renRank <= 5, m[c].steady >= .75]; m[c].fit = m[c].checks.filter(Boolean).length; });
+  return {m, codes, byNet, byRen, avgNet:d3.mean(codes, c => m[c].net), avgRen:d3.mean(codes, c => m[c].ren), n:codes.length};
+}
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function showTip(ev, html){ tip.innerHTML = html; tip.style.opacity = 1; const x = ev.clientX + 14, y = ev.clientY + 14;
+  const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.min(x, innerWidth - w - 8) + "px"; tip.style.top = Math.min(y, innerHeight - h - 8) + "px"; }
+function hideTip(){ tip.style.opacity = 0; }
+
+function select(code){ if (!model.regions[code]) return; state.region = code; if (state.compare === code) state.compare = code === "CAL" ? "NW" : "CAL"; render(); }
+
+/* ---------- KPIs ---------- */
+function renderKPIs(M){
+  const x = M.m[state.region];
+  $("#kNet").textContent = d3.format(".1f")(x.net/1e6) + "M";
+  const nr = $("#kNetRank"); nr.textContent = (x.net > 0 ? "▲ " : "▼ ") + `#${x.netRank} OF ${M.n}`; nr.className = "chip" + (x.net > 0 ? "" : " bad");
+  $("#kNetAvg").textContent = `${fmtM(x.net - M.avgNet)} vs U.S. avg`;
+  const sp = d3.select("#kNetSpark"), mon = model.regions[state.region].monthly.map(d => d.gen - d.dem);
+  const xs = d3.scaleLinear([0, mon.length-1], [2, 258]), ys = d3.scaleLinear(d3.extent([0, ...mon]), [32, 4]);
+  sp.selectAll("*").remove();
+  sp.append("line").attr("x1",2).attr("x2",258).attr("y1",ys(0)).attr("y2",ys(0)).attr("stroke",css("--grid"));
+  sp.append("path").attr("d", d3.area().x((d,i) => xs(i)).y0(ys(0)).y1(d => ys(d)).curve(d3.curveMonotoneX)(mon)).attr("fill", x.net > 0 ? css("--teal") : css("--coral")).attr("opacity",.15);
+  sp.append("path").attr("d", d3.line().x((d,i) => xs(i)).y(d => ys(d)).curve(d3.curveMonotoneX)(mon)).attr("fill","none").attr("stroke", x.net > 0 ? css("--teal") : css("--coral")).attr("stroke-width",1.6);
+  sp.append("circle").attr("cx", xs(mon.length-1)).attr("cy", ys(mon[mon.length-1])).attr("r",3).attr("fill", x.net > 0 ? css("--teal") : css("--coral"));
+  $("#kRen").textContent = d3.format(".0f")(x.ren) + "%";
+  const rr = $("#kRenRank"); rr.textContent = `#${x.renRank} OF ${M.n}`; rr.className = "chip" + (x.renRank <= 5 ? "" : " bad");
+  $("#kRenAvg").textContent = `${x.ren - M.avgRen >= 0 ? "+" : ""}${d3.format(".0f")(x.ren - M.avgRen)} pts vs U.S. avg (${d3.format(".0f")(M.avgRen)}%)`;
+  $("#kRenBar").style.width = Math.min(100, x.ren) + "%"; $("#kRenMark").style.left = M.avgRen + "%";
+  $("#kTop").textContent = SBY[x.top].label.toUpperCase();
+  const ico = $("#kTopIco"); ico.querySelector("use").setAttribute("href", "#s-" + x.top);
+  ico.style.setProperty("--acc", groupColor(SBY[x.top].group)); ico.style.color = css("--ink");
+  $("#kTopNote").textContent = `${d3.format(".0f")(x.topShare)}% of generation`;
+  $("#kFit").textContent = `${x.fit} / 3`;
+  $("#kChecks").innerHTML = ["Net producer","Top 5 renewable","Steady 24/7"].map((t,i) => `<li class="${x.checks[i] ? "" : "no"}">${t.toUpperCase()}</li>`).join("");
+}
+const groupColor = g => g === "ren" ? css("--teal") : g === "fos" ? css("--amber") : css("--slate");
+
+/* ---------- ranking ---------- */
+function renderRank(M){
+  const svg = d3.select("#rank"), W = 380, H = 300, m = {l:state.rank === "net" ? 86 : 44, r:46, t:8, b:6};
+  const key = state.rank, codes = key === "net" ? M.byNet : M.byRen;
+  $("#rankSub").textContent = key === "net" ? "Net production by region, million MWh" : "Renewable share of generation, %";
+  const y = d3.scaleBand(codes, [m.t, H - m.b]).padding(.22);
+  const vals = codes.map(c => key === "net" ? M.m[c].net/1e6 : M.m[c].ren);
+  const x = key === "net" ? d3.scaleLinear([Math.min(0, d3.min(vals)), Math.max(0, d3.max(vals))], [m.l, W - m.r]).nice() : d3.scaleLinear([0, Math.max(60, d3.max(vals))], [m.l, W - m.r]);
+  const t = svg.transition().duration(anim());
+  svg.selectAll("line.zero").data([0]).join("line").attr("class","zero").attr("stroke", css("--ink")).attr("y1", m.t - 4).attr("y2", H - m.b)
+    .transition(t).attr("x1", x(0)).attr("x2", x(0));
+  const g = svg.selectAll("g.row").data(codes, d => d).join(enter => { const e = enter.append("g").attr("class","row mark").attr("tabindex",0).attr("role","button");
+      e.append("rect").attr("class","hit").attr("fill","transparent"); e.append("rect").attr("class","bar").attr("rx",3);
+      e.append("text").attr("class","lab").attr("x", 4).attr("dy",".35em"); e.append("text").attr("class","val").attr("dy",".35em"); return e; });
+  g.attr("aria-label", d => `${NAME[d]}: ${key === "net" ? fmtM(M.m[d].net) + " MWh" : pct(M.m[d].ren)}`)
+   .on("click", (e,d) => select(d)).on("keydown", (e,d) => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select(d); } })
+   .on("mousemove", (e,d) => showTip(e, `<b>${NAME[d]}</b><br>${key === "net" ? (M.m[d].net >= 0 ? "Made " : "Needed ") + `<em>${d3.format(".1f")(Math.abs(M.m[d].net)/1e6)}M MWh</em> ${M.m[d].net >= 0 ? "more than it used" : "more than it made"}` : `<em>${pct(M.m[d].ren)}</em> renewable, #${M.m[d].renRank} of ${M.n}`}<br>Click to explore`))
+   .on("mouseleave", hideTip);
+  g.transition(t).attr("transform", d => `translate(0,${y(d)})`);
+  g.select(".hit").attr("x",0).attr("width",W).attr("height",y.bandwidth());
+  g.select(".bar").attr("height", y.bandwidth()).transition(t)
+   .attr("x", d => { const v = key === "net" ? M.m[d].net/1e6 : M.m[d].ren; return Math.min(x(0), x(v)); })
+   .attr("width", d => { const v = key === "net" ? M.m[d].net/1e6 : M.m[d].ren; return Math.max(1, Math.abs(x(v) - x(0))); })
+   .attr("fill", d => { const v = key === "net" ? M.m[d].net : 1; const sel = d === state.region; return sel ? (v >= 0 ? css("--teal") : css("--coral")) : (v >= 0 ? css("--bar") : css("--bar-neg")); });
+  g.select(".lab").attr("y", y.bandwidth()/2).text(d => d).style("font-weight", d => d === state.region ? 800 : 600).style("fill", d => d === state.region ? css("--ink") : css("--muted"));
+  g.select(".val").attr("y", y.bandwidth()/2).text(d => key === "net" ? d3.format("+.1f")(M.m[d].net/1e6) + "M" : d3.format(".1f")(M.m[d].ren) + "%")
+   .style("font-weight", d => d === state.region ? 800 : 600).style("fill", d => d === state.region ? css("--ink") : css("--muted"))
+   .transition(t).attr("x", d => { const v = key === "net" ? M.m[d].net/1e6 : M.m[d].ren; return v >= 0 ? x(v) + 4 : x(v) - 4; })
+   .attr("text-anchor", d => { const v = key === "net" ? M.m[d].net : 1; return v >= 0 ? "start" : "end"; });
+}
+
+/* ---------- hex map ---------- */
+function renderMap(M){
+  const svg = d3.select("#hexmap"), R = 29, hw = R*Math.sqrt(3), ox = (400 - 7*hw)/2 + hw/2, oy = 40;
+  const pos = Object.fromEntries(REG.map(r => [r[0], [ox + r[2]*hw + (r[3] % 2 ? hw/2 : 0), oy + r[3]*R*1.5]]));
+  const pts = d3.range(6).map(k => [R*.95*Math.cos(Math.PI/180*(60*k-30)), R*.95*Math.sin(Math.PI/180*(60*k-30))]).join(" ");
+  const maxAbs = d3.max(M.codes, c => Math.abs(M.m[c].net)) || 1, maxRen = d3.max(M.codes, c => M.m[c].ren) || 1;
+  const fill = c => { const x = M.m[c]; if (!x) return css("--grid");
+    if (state.map === "net") return d3.interpolateRgb(css("--card"), x.net >= 0 ? css("--teal") : css("--coral"))(.25 + .75*Math.abs(x.net)/maxAbs);
+    return d3.interpolateRgb(css("--card"), css("--teal"))(.12 + .88*x.ren/maxRen); };
+  const dark = c => { const x = M.m[c]; if (!x) return false; return state.map === "net" ? Math.abs(x.net)/maxAbs > .45 : x.ren/maxRen > .5; };
+  const g = svg.selectAll("g.hex").data(REG.map(r => r[0]), d => d).join(enter => { const e = enter.append("g").attr("class","hex mark").attr("tabindex",0).attr("role","button");
+      e.append("polygon").attr("points", pts); e.append("text").attr("class","a").attr("dy","-.1em").style("font-size","11px").style("font-weight",800);
+      e.append("text").attr("class","b").attr("dy","1.35em").style("font-size","8px").style("font-weight",600); return e; });
+  g.attr("transform", d => `translate(${pos[d]})`).attr("aria-label", d => `Select ${NAME[d]}`)
+   .on("click", (e,d) => select(d)).on("keydown", (e,d) => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select(d); } })
+   .on("mousemove", (e,d) => { const x = M.m[d]; if (!x) return; showTip(e, `<b>${NAME[d]} (${d})</b><br>Net: <em>${fmtM(x.net)} MWh</em><br>Renewable: <em>${pct(x.ren)}</em> · #${x.renRank} of ${M.n}<br>Site fit: ${x.fit}/3`); })
+   .on("mouseleave", hideTip);
+  g.select("polygon").attr("fill", fill).attr("stroke", d => d === state.region ? css("--ink") : css("--card")).attr("stroke-width", d => d === state.region ? 3.5 : 2);
+  g.select(".a").text(d => d).style("fill", d => dark(d) ? "#fff" : css("--ink"));
+  g.select(".b").text(d => M.m[d] ? (state.map === "net" ? d3.format("+.0f")(M.m[d].net/1e6) + "M" : d3.format(".0f")(M.m[d].ren) + "% ren.") : "no data")
+   .style("fill", d => dark(d) ? "#fff" : css("--muted"));
+  g.filter(d => d === state.region).raise();
+  // legend
+  const lg = svg.selectAll("g.lg").data([0]).join(e => { const g = e.append("g").attr("class","lg"); g.append("text").attr("class","l1"); g.append("text").attr("class","l2"); return g; }).attr("transform","translate(14,226)");
+  lg.select(".l1").text(state.map === "net" ? "● SURPLUS" : "● MORE RENEWABLE").style("fill", css("--teal")).style("font-weight",800).style("font-size","9px");
+  lg.select(".l2").attr("x", 92).text(state.map === "net" ? "● IMPORTS" : "○ LESS").style("fill", state.map === "net" ? css("--coral") : css("--muted")).style("font-weight",800).style("font-size","9px");
+  $("#pickedName").textContent = `${NAME[state.region]} (${state.region})`;
+}
+
+/* ---------- power mix ---------- */
+function renderMix(M){
+  const r = model.regions[state.region], G = r.gen || 1;
+  let rows = SK.map(k => ({k, share:r.mix[k]/G*100})).filter(d => d.share > .05);
+  const order = {ren:0, nuc:1, fos:2};
+  rows.sort(state.mixSort === "share" ? (a,b) => b.share - a.share : (a,b) => order[SBY[a.k].group] - order[SBY[b.k].group] || b.share - a.share);
+  const mx = d3.max(rows, d => d.share) || 1, C = 2*Math.PI*13;
+  $("#mix").innerHTML = rows.map(d => { const c = groupColor(SBY[d.k].group);
+    return `<div class="mixrow" style="--c:${c};--acc:${c}" title="${SBY[d.k].label}: ${pct(d.share)} of ${NAME[state.region]}'s power">
+      <svg viewBox="0 0 34 34" width="34" height="34" aria-hidden="true"><circle cx="17" cy="17" r="13" fill="none" stroke="${css("--grid")}" stroke-width="4"/>
+       <circle cx="17" cy="17" r="13" fill="none" stroke="${c}" stroke-width="4" stroke-dasharray="${C*d.share/100} ${C}" transform="rotate(-90 17 17)"/>
+       <text x="17" y="20" text-anchor="middle" style="font-size:8.5px;font-weight:700;fill:${css("--ink")}">${d.share < 9.95 ? d3.format(".1f")(d.share) : d3.format(".0f")(d.share)}%</text></svg>
+      <svg class="ico" style="color:${css("--ink")}"><use href="#s-${d.k}"/></svg><span>${SBY[d.k].label}</span><i class="b" style="width:${d.share/mx*100}%"></i></div>`; }).join("");
+  const ren = (r.mix.hydro + r.mix.wind + r.mix.solar)/G*100;
+  $("#mixRen").textContent = `RENEWABLE ${d3.format(".0f")(ren)}%`; $("#mixFos").textContent = `FOSSIL + NUCLEAR ${d3.format(".0f")(100 - ren)}%`;
+}
+
+/* ---------- supply vs demand ---------- */
+function seriesFor(code, period){
+  const r = model.regions[code], floor = period === "month" ? d3.timeMonth.floor : period === "week" ? d3.timeMonday.floor : d3.timeDay.floor;
+  let rows = d3.rollups(r.daily, v => ({gen:d3.sum(v, d => d.gen), dem:d3.sum(v, d => d.dem), n:d3.sum(v, d => d.n || 24),
+      src:Object.fromEntries(SK.map(k => [k, d3.sum(v, d => d.src ? d.src[k] : 0)]))}), d => +floor(d.date))
+    .map(([k,v]) => ({date:new Date(k), ...v})).sort((a,b) => a.date - b.date);
+  // a final period with far fewer hours than usual is a data gap (the course notes one in Jan 2023), so leave it out
+  let gap = null; const med = d3.median(rows, d => d.n);
+  if (rows.length > 2 && rows[rows.length-1].n < med*.5){ gap = rows[rows.length-1]; rows = rows.slice(0, -1); }
+  rows.gap = gap; return rows;
+}
+function gapNote(rows){ return rows.gap ? `Hidden: ${d3.timeFormat("%b %-d, %Y")(rows.gap.date)} onward has only a few hours of data. That's a gap in the dataset, not a real drop.` : ""; }
+function legend(sel, items, store, onChange){
+  const el = $(sel); el.innerHTML = items.map(it => `<button aria-pressed="${store[it.k] !== false}" data-k="${it.k}" style="--c:${it.c}"><i></i>${it.label}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { const k = b.dataset.k; const on = store[k] !== false;
+    const visible = items.filter(it => store[it.k] !== false).length; if (on && visible === 1) return; store[k] = !on; onChange(); });
+}
+function lineChart(svgSel, W, H, data, series, opts = {}){
+  const svg = d3.select(svgSel); svg.selectAll("*").remove();
+  const m = {l:42, r:12, t:10, b:22};
+  const x = (opts.x || d3.scaleTime)(opts.xDomain || d3.extent(data, d => d.x), [m.l, W - m.r]);
+  const active = series.filter(s => s.on);
+  const yMax = d3.max(active, s => d3.max(data, d => d[s.k])) || 1, yMin = opts.zero ? 0 : d3.min(active, s => d3.min(data, d => d[s.k])) || 0;
+  const y = d3.scaleLinear([opts.zero ? 0 : yMin - (yMax - yMin)*.08, yMax*1.05], [H - m.b, m.t]).nice();
+  if (opts.band) svg.append("rect").attr("x", x(opts.band[0])).attr("width", x(opts.band[1]) - x(opts.band[0])).attr("y", m.t).attr("height", H - m.b - m.t).attr("fill", css("--amber")).attr("opacity", .08);
+  if (opts.band) svg.append("text").attr("x", (x(opts.band[0]) + x(opts.band[1]))/2).attr("y", m.t + 10).attr("text-anchor","middle").text("SUN HOURS").style("fill", css("--amber")).style("font-weight",700).style("font-size","8px").style("letter-spacing",".1em");
+  const ya = svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(opts.yFmt || fmtS));
+  ya.select(".domain").remove(); ya.selectAll("line").attr("stroke", css("--grid")); ya.selectAll("text").attr("dx", -4);
+  const xa = svg.append("g").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(opts.xTicks || 6).tickFormat(opts.xFmt || null).tickSize(0));
+  xa.select(".domain").attr("stroke", css("--line")); xa.selectAll("text").attr("dy", "1.2em");
+  if (opts.fillBetween && active.length === 2){
+    const [a,b] = active; svg.append("path").attr("d", d3.area().x(d => x(d.x)).y0(d => y(d[b.k])).y1(d => y(d[a.k])).curve(d3.curveMonotoneX)(data)).attr("fill", a.c).attr("opacity", .12);
+  }
+  active.forEach(s => { const p = svg.append("path").attr("d", d3.line().x(d => x(d.x)).y(d => y(d[s.k])).curve(d3.curveMonotoneX)(data))
+      .attr("fill","none").attr("stroke", s.c).attr("stroke-width", s.w || 2.2).attr("stroke-dasharray", s.dash || null);
+    const L = p.node().getTotalLength(); if (anim() && !s.dash) p.attr("stroke-dasharray", `${L} ${L}`).attr("stroke-dashoffset", L).transition().duration(700).attr("stroke-dashoffset", 0).on("end", function(){ d3.select(this).attr("stroke-dasharray", null); }); });
+  // hover
+  const cross = svg.append("line").attr("y1", m.t).attr("y2", H - m.b).attr("stroke", css("--ink")).attr("opacity", 0);
+  const dots = svg.selectAll("circle.hd").data(active).join("circle").attr("class","hd").attr("r", 3.5).attr("fill", s => s.c).attr("opacity", 0);
+  svg.append("rect").attr("x", m.l).attr("y", m.t).attr("width", W - m.l - m.r).attr("height", H - m.t - m.b).attr("fill","transparent")
+    .on("mousemove", e => { const [mx] = d3.pointer(e); const xv = x.invert(mx); const i = d3.leastIndex(data, d => Math.abs(d.x - xv)); const d = data[i];
+      cross.attr("x1", x(d.x)).attr("x2", x(d.x)).attr("opacity", .25); dots.attr("cx", x(d.x)).attr("cy", s => y(d[s.k])).attr("opacity", 1);
+      showTip(e, `<b>${opts.tipTitle ? opts.tipTitle(d) : d.x}</b><br>` + active.map(s => `${s.label}: <em>${(opts.tipFmt || fmtS)(d[s.k])}</em>`).join("<br>") + (opts.tipExtra ? opts.tipExtra(d) : "")); })
+    .on("mouseleave", () => { cross.attr("opacity", 0); dots.attr("opacity", 0); hideTip(); });
+  return {x, y, svg};
+}
+function renderSD(){
+  const rows = seriesFor(state.region, state.period), data = rows.map(d => ({x:d.date, gen:d.gen, dem:d.dem}));
+  $("#sdFoot").textContent = gapNote(rows);
+  const ser = [{k:"gen", label:"Net generation", c:css("--teal"), on:state.sd.gen !== false}, {k:"dem", label:"Demand", c:css("--amber"), on:state.sd.dem !== false, dash:"5 3"}];
+  legend("#sdLegend", ser, state.sd, renderSD);
+  const tf = state.period === "month" ? d3.timeFormat("%b %Y") : state.period === "week" ? d3.timeFormat("Week of %b %-d") : d3.timeFormat("%a %b %-d, %Y");
+  lineChart("#sd", 470, 210, data, ser, {fillBetween:true, xFmt:d3.timeFormat(state.period === "day" ? "%b" : "%b"), tipTitle:d => tf(d.x), tipFmt:v => fmtS(v) + " MWh",
+    tipExtra:d => (state.sd.gen !== false && state.sd.dem !== false) ? `<br>${d.gen >= d.dem ? "Surplus" : "Shortfall"}: <em>${fmtS(Math.abs(d.gen - d.dem))} MWh</em>` : ""});
+}
+
+/* ---------- pulse ---------- */
+function renHourly(code){ const r = model.regions[code]; return r ? d3.range(24).map(h => r.hourly.hydro[h] + r.hourly.wind[h] + r.hourly.solar[h]) : d3.range(24).map(() => 0); }
+function renderPulse(M){
+  const a = renHourly(state.region), b = renHourly(state.compare);
+  const data = d3.range(24).map(h => ({x:h, sel:a[h], cmp:b[h]}));
+  const ser = [{k:"sel", label:`${state.region} · ${M.m[state.region].steady >= .75 ? "steady" : "swings"}`, c:css("--teal"), on:state.pu.sel !== false, w:2.6},
+               {k:"cmp", label:`${state.compare} · ${M.m[state.compare] && M.m[state.compare].steady >= .75 ? "steady" : "swings"}`, c:css("--amber"), on:state.pu.cmp !== false}];
+  legend("#puLegend", ser, state.pu, () => renderPulse(metrics()));
+  const {x, y, svg} = lineChart("#pulse", 400, 210, data, ser, {x:d3.scaleLinear, xDomain:[0,23], xTicks:6, xFmt:h => h + ":00", zero:true, band:[8,17],
+    tipTitle:d => `${d.x}:00`, tipFmt:v => fmtS(v) + " MWh"});
+  // annotate low point of the spikier visible line
+  const vis = ser.filter(s => s.on).map(s => ({s, v:data.map(d => d[s.k])}));
+  const spiky = vis.sort((p,q) => d3.min(p.v)/d3.max(p.v) - d3.min(q.v)/d3.max(q.v))[0];
+  if (spiky){ const i = d3.minIndex(spiky.v), ratio = d3.min(spiky.v)/d3.max(spiky.v);
+    svg.append("circle").attr("cx", x(i)).attr("cy", y(spiky.v[i])).attr("r", 4).attr("fill", spiky.s.c);
+    svg.append("text").attr("x", Math.min(Math.max(x(i), 110), 300)).attr("y", Math.min(y(spiky.v[i]) + 18, 182)).attr("text-anchor","middle")
+      .text(`${spiky.s.label.split(" ")[0]} LOW HOUR = ${d3.format(".0%")(ratio)} OF PEAK`).style("fill", spiky.s.c).style("font-weight",800).style("font-size","8.5px"); }
+}
+
+/* ---------- verdict ---------- */
+function renderVerdict(M){
+  const x = M.m[state.region], best = M.codes.filter(c => M.m[c].fit === 3).sort((a,b) => M.m[b].ren - M.m[a].ren)[0];
+  $("#vLead").textContent = x.fit === 3 ? "BUILD IN THE" : "NOT THE PICK:";
+  $("#vName").textContent = NAME[state.region].toUpperCase();
+  const miss = ["isn't a net producer","isn't top 5 for renewables","swings too much hour to hour"].filter((t,i) => !x.checks[i]);
+  $("#vFacts").innerHTML = `
+    <div><strong>${d3.format(".1f")(Math.abs(x.net)/1e6)}M MWh</strong><span>${x.net >= 0 ? "more energy made than used" : "more energy used than made"}</span></div>
+    <div><strong>${d3.format(".0f")(x.ren)}%</strong><span>renewable, #${x.renRank} of ${M.n}</span></div>
+    <div><strong>${d3.format(".0%")(x.steady)}</strong><span>lowest renewable hour vs its peak</span></div>
+    ${x.fit < 3 ? `<div><span>It ${miss.join(" and ")}.${best ? ` <a href="#" id="goBest" style="color:var(--teal);font-weight:700">See ${NAME[best]} →</a>` : ""}</span></div>` : ""}`;
+  const gb = $("#goBest"); if (gb) gb.onclick = e => { e.preventDefault(); select(best); };
+}
+
+/* ---------- deep dive ---------- */
+function renderTreemap(){
+  const r = model.regions[state.region], svg = d3.select("#treemap"); svg.selectAll("*").remove();
+  $("#tmSub").textContent = `Utility power source breakdown · ${NAME[state.region]}`;
+  const bas = r.baMix ? Object.keys(r.baMix) : null, byBA = bas && bas.length > 1;
+  $("#tmSub").textContent = `Energy source by region${byBA ? " and balancing authority" : ""} · ${NAME[state.region]}`;
+  const root = d3.hierarchy({children:SK.filter(k => r.mix[k] > 0).map(k => byBA ? {k, children:bas.filter(b => r.baMix[b][k] > 0).map(b => ({k, ba:b, v:r.baMix[b][k]}))} : {k, v:r.mix[k]})})
+    .sum(d => d.v || 0).sort((a,b) => b.value - a.value);
+  d3.treemap().size([560, 300]).paddingInner(byBA ? 1 : 3).paddingOuter(byBA ? 2 : 0).round(true)(root);
+  const tot = root.value || 1;
+  const n = svg.selectAll("g").data(root.leaves()).join("g").attr("transform", d => `translate(${d.x0},${d.y0})`)
+    .on("mousemove", (e,d) => showTip(e, `<b>${SBY[d.data.k].label}</b>${d.data.ba ? ` · ${d.data.ba}` : ""}<br><em>${pct(d.value/tot*100)}</em> of ${NAME[state.region]}'s generation<br>${fmtS(d.value)} MWh`)).on("mouseleave", hideTip);
+  n.append("rect").attr("width", d => d.x1 - d.x0).attr("height", d => d.y1 - d.y0).attr("rx", 4)
+    .attr("fill", d => groupColor(SBY[d.data.k].group)).attr("opacity", (d,i) => 1 - Math.min(i,5)*.1);
+  n.filter(d => d.x1 - d.x0 > SBY[d.data.k].label.length*8 + 16 && d.y1 - d.y0 > 34).append("text").attr("x", 10).attr("y", 20).text(d => SBY[d.data.k].label.toUpperCase()).style("fill","#fff").style("font-weight",800).style("font-size","11px").style("letter-spacing",".06em");
+  n.filter(d => d.data.ba && d.x1 - d.x0 > 50 && d.y1 - d.y0 > 70).append("text").attr("x", 10).attr("y", 58).text(d => d.data.ba).style("fill","#fff").style("font-weight",600).style("font-size","10px").style("opacity",.85);
+  n.filter(d => d.x1 - d.x0 > 60 && d.y1 - d.y0 > 52).append("text").attr("x", 10).attr("y", 40).text(d => pct(d.value/tot*100)).style("fill","#fff").style("font-family","Poppins").style("font-weight",700).style("font-size","16px");
+}
+function renderMonthly(){
+  const r = model.regions[state.region];
+  const keys = SK.filter(k => r.mix[k] > 0);
+  const rows = seriesFor(state.region, state.esPeriod), data = rows.map(d => Object.assign({x:d.date}, Object.fromEntries(keys.map(k => [k, d.src[k]]))));
+  $("#esSub").textContent = `${NAME[state.region]} · energy generated by source, per ${state.esPeriod}`; $("#esFoot").textContent = gapNote(rows);
+  const tf = state.esPeriod === "month" ? d3.timeFormat("%B %Y") : state.esPeriod === "week" ? d3.timeFormat("Week of %b %-d, %Y") : d3.timeFormat("%a %b %-d, %Y");
+  const shades = {hydro:css("--teal"), wind:d3.color(css("--teal")).darker(.8).formatHex(), solar:d3.color(css("--teal")).brighter(.9).formatHex(),
+    gas:css("--amber"), coal:d3.color(css("--amber")).darker(1).formatHex(), petroleum:d3.color(css("--amber")).brighter(.8).formatHex(), nuclear:css("--slate"), other:d3.color(css("--slate")).brighter(.8).formatHex()};
+  const ser = keys.map(k => ({k, label:SBY[k].label, c:shades[k], on:state.ms[k] !== false}));
+  legend("#msLegend", ser, state.ms, renderMonthly);
+  lineChart("#monthly", 560, 270, data, ser.map(x => Object.assign(x, {w: state.esPeriod === "day" ? 1.2 : 2.2})), {zero:true, xFmt:d3.timeFormat("%b"), tipTitle:d => tf(d.x), tipFmt:v => fmtS(v) + " MWh"});
+}
+function renderHourDiff(){
+  const r = model.regions[state.region], k = state.ddSource, v = r.hourly[k] || [];
+  const svg = d3.select("#hourdiff"); svg.selectAll("*").remove();
+  const W = 560, H = 270, m = {l:42, r:12, t:14, b:22};
+  if (!v.length || d3.sum(v) <= 0){ svg.append("text").attr("x", W/2).attr("y", H/2).attr("text-anchor","middle").text(`${NAME[state.region]} has no ${SBY[k].label.toLowerCase()} generation.`).style("font-size","13px"); return; }
+  const floor = d3.max(v)*.01;
+  const d = d3.range(24).map(h => { const prev = v[(h+23)%24]; return {h, p: prev > floor ? (v[h]-prev)/prev*100 : 0}; });
+  const lim = Math.max(5, d3.max(d, x => Math.abs(x.p)));
+  const x = d3.scaleBand(d3.range(24), [m.l, W - m.r]).padding(.18), y = d3.scaleLinear([-lim, lim], [H - m.b, m.t]).nice();
+  const ya = svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(t => t + "%"));
+  ya.select(".domain").remove(); ya.selectAll("line").attr("stroke", css("--grid")); ya.selectAll("text").attr("dx", -4);
+  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0)).attr("stroke", css("--ink"));
+  svg.selectAll("rect.b").data(d).join("rect").attr("class","b").attr("x", e => x(e.h)).attr("width", x.bandwidth()).attr("rx", 2)
+    .attr("y", y(0)).attr("height", 0).attr("fill", e => e.p >= 0 ? css("--teal") : css("--coral"))
+    .on("mousemove", (ev,e) => showTip(ev, `<b>${e.h}:00</b><br>${SBY[k].label} output <em>${e.p >= 0 ? "up" : "down"} ${d3.format(".1f")(Math.abs(e.p))}%</em> from the hour before`)).on("mouseleave", hideTip)
+    .transition().duration(anim()).delay((e,i) => anim() ? i*15 : 0).attr("y", e => Math.min(y(0), y(e.p))).attr("height", e => Math.abs(y(e.p) - y(0)));
+  svg.selectAll("text.xl").data([0,6,12,18,23]).join("text").attr("class","xl").attr("x", h => x(h) + x.bandwidth()/2).attr("y", H - 6).attr("text-anchor","middle").text(h => h + ":00");
+}
+function renderSteady(M){
+  const a = renHourly(state.region), b = renHourly(state.compare), ma = d3.max(a) || 1, mb = d3.max(b) || 1;
+  $("#ssSub").textContent = `Renewables by hour as % of each region's peak · ${state.region} vs ${state.compare}`;
+  const data = d3.range(24).map(h => ({x:h, sel:a[h]/ma*100, cmp:b[h]/mb*100}));
+  const ser = [{k:"sel", label:`${state.region} (low = ${d3.format(".0%")(M.m[state.region].steady)} of peak)`, c:css("--teal"), on:state.ss.sel !== false, w:2.6},
+               {k:"cmp", label:`${state.compare} (low = ${d3.format(".0%")(M.m[state.compare] ? M.m[state.compare].steady : 0)} of peak)`, c:css("--amber"), on:state.ss.cmp !== false}];
+  legend("#ssLegend", ser, state.ss, () => renderSteady(metrics()));
+  const {x, y, svg} = lineChart("#steady", 560, 270, data, ser, {x:d3.scaleLinear, xDomain:[0,23], xFmt:h => h + ":00", zero:true, yFmt:t => t + "%", tipTitle:d => `${d.x}:00`, tipFmt:v => d3.format(".0f")(v) + "% of peak"});
+  svg.append("line").attr("x1", x(0)).attr("x2", x(23)).attr("y1", y(75)).attr("y2", y(75)).attr("stroke", css("--ink")).attr("stroke-dasharray","3 3").attr("opacity",.6);
+  svg.append("text").attr("x", x(23)).attr("y", y(75) - 5).attr("text-anchor","end").text("STEADY LINE · 75% OF PEAK").style("font-weight",800).style("font-size","8.5px").style("fill", css("--ink"));
+}
+
+/* ---------- selects, navigation, wiring ---------- */
+function setupSelects(){
+  const codes = REG.map(r => r[0]).filter(c => model.regions[c]);
+  const opts = sel => codes.map(c => `<option value="${c}"${c === sel ? " selected" : ""}>${NAME[c]} (${c})</option>`).join("");
+  $("#cmpSel").innerHTML = opts(state.compare); $("#esRegion").innerHTML = opts(state.region); $("#fCompare").innerHTML = opts(state.compare); $("#fRegion").innerHTML = opts(state.region);
+  const srcs = SK.map(k => `<option value="${k}"${k === state.ddSource ? " selected" : ""}>${SBY[k].label}</option>`).join("");
+  $("#srcSel").innerHTML = srcs; $("#fSource").innerHTML = srcs;
+  const pill = $("#dataPill"), note = $("#dataNote");
+  if (model.source === "csv"){ pill.className = "pill live"; pill.textContent = "Your data"; note.textContent = `${model.file} · ${d3.format(",")(model.rows)} rows`; $("#loadBtn").textContent = "Load another file"; }
+  else { pill.className = "pill demo"; pill.textContent = "Demo data"; note.textContent = "Net production and renewable % read off my Tableau charts. Other values are samples."; $("#loadBtn").textContent = "Load energy_dataset.csv"; }
+}
+function syncControls(){
+  document.querySelectorAll("[data-rank]").forEach(b => b.setAttribute("aria-pressed", b.dataset.rank === state.rank));
+  document.querySelectorAll("[data-map]").forEach(b => b.setAttribute("aria-pressed", b.dataset.map === state.map));
+  document.querySelectorAll("[data-mix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mix === state.mixSort));
+  document.querySelectorAll("[data-period]").forEach(b => b.setAttribute("aria-pressed", b.dataset.period === state.period));
+  document.querySelectorAll("[data-esperiod]").forEach(b => b.setAttribute("aria-pressed", b.dataset.esperiod === state.esPeriod));
+  $("#esRegion").value = state.region;
+  $("#fRegion").value = state.region; $("#fCompare").value = state.compare; $("#cmpSel").value = state.compare;
+  $("#fPeriod").value = state.period; $("#fSource").value = state.ddSource; $("#srcSel").value = state.ddSource;
+}
+function render(){
+  const M = metrics(); if (!M.m[state.compare]) state.compare = M.codes.find(c => c !== state.region);
+  syncControls();
+  if (state.view === "overview"){ renderKPIs(M); renderRank(M); renderMap(M); renderMix(M); renderSD(); renderPulse(M); renderVerdict(M); }
+  else { renderTreemap(); renderMonthly(); renderHourDiff(); renderSteady(M); }
+}
+function setView(v){
+  state.view = v === "deep-dive" ? "deep-dive" : "overview";
+  $("#view-overview").hidden = state.view !== "overview"; $("#view-deep-dive").hidden = state.view !== "deep-dive";
+  document.querySelectorAll("[data-view]").forEach(b => { if (b.dataset.view === state.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  closeDrawers(); render();
+}
+function closeDrawers(){ document.querySelectorAll(".drawer").forEach(d => d.hidden = true); $("#scrim").hidden = true; document.querySelectorAll("[data-drawer]").forEach(b => b.setAttribute("aria-expanded","false")); }
+function toggleDrawer(name){ const d = $("#drawer-" + name), open = d.hidden; closeDrawers(); if (open){ d.hidden = false; $("#scrim").hidden = false; $(`[data-drawer="${name}"]`).setAttribute("aria-expanded","true"); d.querySelector("[data-close]").focus(); } }
+
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => { location.hash = b.dataset.view; });
+addEventListener("hashchange", () => setView(location.hash.slice(1)));
+document.querySelectorAll("[data-drawer]").forEach(b => b.onclick = () => toggleDrawer(b.dataset.drawer));
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeDrawers);
+$("#scrim").onclick = closeDrawers;
+addEventListener("keydown", e => { if (e.key === "Escape") closeDrawers(); });
+document.querySelectorAll("[data-rank]").forEach(b => b.onclick = () => { state.rank = b.dataset.rank; render(); });
+document.querySelectorAll("[data-map]").forEach(b => b.onclick = () => { state.map = b.dataset.map; render(); });
+document.querySelectorAll("[data-mix]").forEach(b => b.onclick = () => { state.mixSort = b.dataset.mix; render(); });
+document.querySelectorAll("[data-period]").forEach(b => b.onclick = () => { state.period = b.dataset.period; render(); });
+$("#resetBtn").onclick = () => { state.compare = "CAL"; select(model.regions.NW ? "NW" : Object.keys(model.regions)[0]); };
+document.querySelectorAll("[data-esperiod]").forEach(b => b.onclick = () => { state.esPeriod = b.dataset.esperiod; render(); });
+$("#esRegion").onchange = e => select(e.target.value);
+$("#cmpSel").onchange = e => { state.compare = e.target.value; render(); };
+$("#fCompare").onchange = e => { state.compare = e.target.value; render(); };
+$("#fRegion").onchange = e => select(e.target.value);
+$("#fPeriod").onchange = e => { state.period = e.target.value; render(); };
+$("#srcSel").onchange = e => { state.ddSource = e.target.value; render(); };
+$("#fSource").onchange = e => { state.ddSource = e.target.value; render(); };
+$("#loadBtn").onclick = () => { if ($("#drawer-about").hidden) toggleDrawer("about"); $("#fileIn").click(); };
+$("#fileIn").onchange = e => { const f = e.target.files[0]; if (f) loadCSV(f); };
+$("#demoBtn").onclick = () => { model = demoModel(); state.region = "NW"; state.compare = "CAL"; $("#demoBtn").hidden = true; $("#prog").textContent = "Back on demo data."; setupSelects(); render(); };
+const drop = $("#drop");
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) loadCSV(f); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+document.fonts && document.fonts.ready.then(render);
+
+setupSelects();
+setView(location.hash.slice(1) || "overview");
+})();
+</script>
+
+</body>
+</html>
