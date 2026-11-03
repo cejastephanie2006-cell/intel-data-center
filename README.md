@@ -10,8 +10,6 @@ Where should Intel build its next data center? This project answers that questio
 
 ## What's in the project
 
-**Tableau dashboard** ([Tableau Public link](YOUR-TABLEAU-PUBLIC-LINK))
-
 - Net production by region (NetProduction calculated field)
 - Supply vs. demand dual-axis chart with a Day / Week / Month parameter (SelectPeriod and DATETRUNC)
 - Renewable energy share by region (RenewableEnergy and RenewablePercentage calculated fields)
