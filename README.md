@@ -2,7 +2,7 @@
 
 Where should Intel build its next data center? This project answers that question with U.S. regional energy data. It compares how much power each region produces, how much of it comes from renewable sources, and how steady that supply stays hour to hour.
 
-   **[View the live dashboard]([(https://claude.ai/artifact/C1MJZjBtvBqsUZzQEgGSJA))**
+**[View the live dashboard]([(https://claude.ai/artifact/C1MJZjBtvBqsUZzQEgGSJA))**
    
 ## The recommendation
 
