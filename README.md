@@ -2,8 +2,8 @@
 
 Where should Intel build its next data center? This project answers that question with U.S. regional energy data. It compares how much power each region produces, how much of it comes from renewable sources, and how steady that supply stays hour to hour.
 
-**[View the live dashboard]([file:///Users/rosarylamb/Downloads/index.html](https://claude.ai/artifact/C1MJZjBtvBqsUZzQEgGSJA))**
-
+   **[View the live dashboard](https://claude.ai/artifact/C1MJZjBtvBqsUZzQEgGSJA)**
+   
 ## The recommendation
 
 **The Northwest.** It produces about 22 million MWh more energy than it uses, the second-largest surplus in the country. It also leads the nation with roughly 52% of its power coming from renewable sources. Most of that is hydropower, which runs steadily around the clock instead of rising and falling with the sun or wind. A data center needs reliable, clean power 24/7, and the Northwest delivers both.
